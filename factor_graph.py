@@ -63,9 +63,8 @@ class Message(object):
         self.type = type
 
 class FactorGraph():
-    def __init__(self, dim, max_mode=4, sampling_mode='importance', loop_closure_rejection=True, nb_sample=10, remove=True, nullTri=False, nullLoop=False, multi=False):
+    def __init__(self, dim, sampling_mode='importance', nb_sample=10, nullTri=False, nullLoop=False):
         self.dim = dim
-        self.max_mode = max_mode
         self.variables = []
         self.var_key_to_idx = {}
         self.var_keys = []
@@ -83,17 +82,14 @@ class FactorGraph():
         self.edges = []
         self.sampling_mode = sampling_mode
         self.nb_sample = nb_sample
-        self.loop_closure_rejection = loop_closure_rejection
 
         self.G = nx.Graph()
         self.iG = iGraph()
 
         self.factor_of_vars = {}
 
-        self.remove = remove
         self.nullTri = nullTri
         self.nullLoop = nullLoop
-        self.multi = multi
 
         self.clique_factor_pair_up = {}
         self.clique_factor_pair_down = {}
@@ -193,28 +189,28 @@ class FactorGraph():
             self.propagateMessage(key, threshold=threshold)
 
 
-    def buildMsgFromVarToFactor(self, key_factor, type, threshold=0.1):
+    def buildMsgFromVarToFactor(self, key_factor, type):
         factor = copy.deepcopy(self.getFactorFromKey(key_factor))
-        #zs = copy.deepcopy(factor.measurements)
+
         if type == 'from':
             edge = factor.from_edge
         elif type == 'to':
             edge = factor.to_edge
-            #for i in range(len(zs)):
-            #    zs[i] = copy.deepcopy(pinv(zs[i]))
+
         isValid = (edge is not None)
         if isValid:
             key_var = copy.deepcopy(self.edges[edge].key_var)
             message_new = Message(key_factor, key_var, [], [], self.getFactorTypeFromKey(key_factor))
+
             # pull msgs from neighbor variables of factor
 
             edges_of_var = self.getVariableFromKey(key_var).edges
             if (len(edges_of_var)) == 1:
                 # No other source except target factor -> direct message
-                #for z in zs:
+
                 var_pose = copy.deepcopy(self.getVariableFromKey(key_var).mean)
-                mean = (var_pose)# @ z)
-                cov = factor.noises[0]  # factor noise
+                mean = (var_pose)
+                cov = factor.noises[0]
                 gaussian = Gaussian(mean, cov, 1.0)
                 message_new.gaussians.append(gaussian)
                 message_new.weights.append(1.0)
@@ -222,44 +218,26 @@ class FactorGraph():
             else:
                 # More than one source except target factor -> multiply messages from other factors
 
-                t1=time.time()
-
                 messages = []
                 for edge_of_var in edges_of_var:
                     if edge_of_var != edge:
                         messages.append(copy.deepcopy(self.edges[edge_of_var].message_factor_to_var))
 
                 dd = 0
-                t2=time.time()
+
                 for msg in messages:
                     dd += len(msg.gaussians)
 
                 #print("NB_MESSAGES :", len(messages))
 
-                nb_messages = len(messages)
 
                 gaussians, weights = sampling(messages, nb_sample=self.nb_sample, sampling_method=self.sampling_mode,
-                                              nullLoop=self.nullLoop, nullTri=self.nullTri, multi=self.multi)
+                                              nullLoop=self.nullLoop, nullTri=self.nullTri)
 
-                if len(gaussians) > 100:
-                    debug='on'
-                    plt.clf()
-                    for gaussian in gaussians:
-                        mean = t2v(gaussian.mean)
-                        x = mean[0]
-                        y = mean[1]
-                        plt.plot(x, y, 'x', color='black')
 
-                    plt.savefig('Test.png', dpi=300)
-
-                #print("Before Sampling : ", dd, "  After Sampling : ", len(gaussians))
-
-                #print("Factor ", key_factor, " NB Gaussian : ", len(gaussians))
                 message_new.gaussians += copy.deepcopy(gaussians)
                 message_new.weights += copy.deepcopy(weights)
-                t4=time.time()
-                total = 1#(t4-t1+1e-7)
-                #print("DEBUGING TIME : ",((t3-t2)/total))
+
             message_new.weights /= np.sum(message_new.weights)
             self.edges[edge].message_var_to_factor = copy.deepcopy(message_new)
 
@@ -311,29 +289,49 @@ class FactorGraph():
                         cov = (factor.noises[cnt])
                         gaussian = Gaussian(copy.deepcopy(mean), copy.deepcopy(cov), copy.deepcopy(msg.gaussians[i].weight))
                         message_new.gaussians.append(copy.deepcopy(gaussian))
+                        message_new.weights.append(msg.weights[i])
                 cnt += 1
-            nb_gaussian_new = len(message_new.gaussians)
-            weights_new = np.ones(shape=(nb_gaussian_new))/np.float32(nb_gaussian_new)
-            message_new.weights = weights_new
 
 
             self.edges[edge].message_factor_to_var = copy.deepcopy(message_new)
 
+    def allGaussians(self):
+        nb_gaussians = 0
+        weights = []
+        for edge in self.edges:
+            ws_1 = []
+            if edge.message_factor_to_var is not None:
+                cnt = 0
+                for g in edge.message_factor_to_var.gaussians:
+                    if g is not None:
+                        nb_gaussians += 1
+                        ws_1.append(edge.message_factor_to_var.weights[cnt])
+                    cnt += 1
+                ws_1 /= np.sum(ws_1)
+
+            ws_2 = []
+            if edge.message_var_to_factor is not None:
+                cnt = 0
+                for g in edge.message_var_to_factor.gaussians:
+                    if g is not None:
+                        nb_gaussians += 1
+                        ws_2.append(edge.message_var_to_factor.weights[cnt])
+                    cnt += 1
+
+                ws_2 /= np.sum(ws_2)
+
+            for w in ws_1:
+                weights.append(w)
+
+            for w in ws_2:
+                weights.append(w)
+
+
+        return nb_gaussians, weights
+
     def propagateMessage(self, key_factor, threshold=0.1, debug=False):
 
-        #p_id = os.getpid()
-
-        if key_factor == 'f4':
-            debug='on'
-
-        #print("factor ", key_factor, " propagating using process ", p_id)
-
         factor = copy.deepcopy(self.getFactorFromKey(key_factor))
-
-        #if debug:
-        #    print("propagate msg from factor ", key_factor)
-
-
         isPrior = (factor.type == 'prior')
 
         if isPrior:
@@ -349,103 +347,89 @@ class FactorGraph():
             self.edges[edge].message_var_to_factor = msg
         else:
 
-            time1 = time.time()
             # step (1) : build msg from from_var to factor4 is 2 or more.
-            self.buildMsgFromVarToFactor(key_factor, 'from', threshold=threshold)
+            self.buildMsgFromVarToFactor(key_factor, 'from')
 
-            time2 = time.time()
             # step (2) : build msg from factor   to to_var
             self.buildMsgFromFactorToVar(key_factor, 'to')
 
-            time3 = time.time()
             # step (3) : build msg from to_var   to factor
-            self.buildMsgFromVarToFactor(key_factor, 'to', threshold=threshold)
+            self.buildMsgFromVarToFactor(key_factor, 'to')
 
-            time4 = time.time()
             # step (4) : build msg from factor   to from_var
             self.buildMsgFromFactorToVar(key_factor, 'from')
 
-            time5 = time.time()
-
-            total = 1#(time5 - time1+1e-7)
-
-            #print("Debug Propagation time : ", np.round((time2-time1)/total, 5),
-            #      " ", np.round((time3-time2)/total, 5), " ", np.round((time4-time3)/total, 5)
-            #     , " ", np.round((time5-time4)/total, 5))
-
-
-
-
-    def updateVarPose(self, key_var, kde_sample=100, plot=False, title=None, threshold=0.1):
+    def updateVarPose(self, key_var, kde_sample=100, plot=False, title=None, isKDE=False):
 
         variable = copy.deepcopy(self.getVariableFromKey(key_var))
-
         messages = []
 
-        if key_var == 'x5':
-            debug=1
         for edge in variable.edges:
-            #isLC = (self.getFactorFromKey(self.edges[edge].key_factor).type == 'loop_closure')
             messages.append(self.edges[edge].message_factor_to_var)
 
         gaussians, weights = sampling(messages, nb_sample=self.nb_sample, sampling_method=self.sampling_mode,
-                                      nullLoop=self.nullLoop, nullTri=self.nullTri, multi=self.multi)
+                                      nullLoop=self.nullLoop, nullTri=self.nullTri)
 
-
-        isMultiModal = len(gaussians) > 1
-
-        if isMultiModal:
-            weights /= np.sum(weights)
-            gaussian_idx = np.random.choice(len(weights), size=kde_sample, p=weights)
-
-            samples = []
-            for i in range(kde_sample):
-                gaussian = gaussians[gaussian_idx[i]]
-                mean = t2v(gaussian.mean)
-                cov = gaussian.cov
-                s = np.random.multivariate_normal(mean, cov, 1).T[:, 0]
-                samples.append(s)
-            samples = np.array(samples)
-            x = samples[:, 0]
-            y = samples[:, 1]
-            heading = samples[:, 2]
-
-            values = np.vstack([x, y, heading])
-            kernel = stats.gaussian_kde(values)
-            xx, yy, hh = np.mgrid[np.min(x) - 1.0:np.max(x) + 1.0:25j,
-                         np.min(y) - 1.0:np.max(y) + 1.0:25j,
-                         np.min(heading):np.max(heading):25j]
-
-            positions = np.vstack([xx.ravel(), yy.ravel(), hh.ravel()])
-            f = np.reshape(kernel(positions).T, xx.shape)
-
-
-            maxarg = np.unravel_index(f.argmax(), f.shape)
-            pose = v2t(np.array([xx[maxarg[0], 0, 0], yy[0, maxarg[1], 0], hh[0, 0, maxarg[2]]]))
+        if not isKDE:
             idx_var = self.getVariableIdxFromKey(key_var)
-            self.variables[idx_var].mean = pose
-
+            self.variables[idx_var].mean = gaussians[np.argmax(weights)].mean
 
         else:
-            idx_var = self.getVariableIdxFromKey(key_var)
-            self.variables[idx_var].mean = gaussians[0].mean
+
+            isMultiModal = len(gaussians) > 1
+
+            if isMultiModal:
+                weights /= np.sum(weights)
+                gaussian_idx = np.random.choice(len(weights), size=kde_sample, p=weights)
+
+                samples = []
+                for i in range(kde_sample):
+                    gaussian = gaussians[gaussian_idx[i]]
+                    mean = t2v(gaussian.mean)
+                    cov = gaussian.cov
+                    s = np.random.multivariate_normal(mean, cov, 1).T[:, 0]
+                    samples.append(s)
+                samples = np.array(samples)
+                x = samples[:, 0]
+                y = samples[:, 1]
+                heading = samples[:, 2]
+
+                values = np.vstack([x, y, heading])
+                kernel = stats.gaussian_kde(values)
+                xx, yy, hh = np.mgrid[np.min(x) - 1.0:np.max(x) + 1.0:25j,
+                             np.min(y) - 1.0:np.max(y) + 1.0:25j,
+                             np.min(heading):np.max(heading):25j]
+
+                positions = np.vstack([xx.ravel(), yy.ravel(), hh.ravel()])
+                f = np.reshape(kernel(positions).T, xx.shape)
 
 
-        if plot:
-            x = samples[:, 0]
-            values = np.vstack([x])
-            kernel = stats.gaussian_kde(values)
-            gap = np.max(x) - np.min(x)
-            xx = np.mgrid[np.min(x) - gap :np.max(x) + gap:300j]
+                maxarg = np.unravel_index(f.argmax(), f.shape)
+                pose = v2t(np.array([xx[maxarg[0], 0, 0], yy[0, maxarg[1], 0], hh[0, 0, maxarg[2]]]))
+                idx_var = self.getVariableIdxFromKey(key_var)
+                self.variables[idx_var].mean = pose
 
-            positions = np.vstack([xx.ravel()])
-            f = np.float64(np.reshape(kernel(positions).T, xx.shape))
-            f /= (np.sum(f) + 1e-7)
-            plt.clf()
-            plt.plot(positions[0], f, color='blue')
-            plt.plot(x, np.zeros(shape=x.shape), 'rp', markersize=0.1)
-            plt.title(title)
-            plt.savefig(title+'.png', dpi=300)
+
+            else:
+                idx_var = self.getVariableIdxFromKey(key_var)
+                self.variables[idx_var].mean = gaussians[0].mean
+
+
+            if plot:
+                x = samples[:, 0]
+                values = np.vstack([x])
+                kernel = stats.gaussian_kde(values)
+                gap = np.max(x) - np.min(x)
+                xx = np.mgrid[np.min(x) - gap :np.max(x) + gap:300j]
+
+                positions = np.vstack([xx.ravel()])
+                f = np.float64(np.reshape(kernel(positions).T, xx.shape))
+                f /= (np.sum(f) + 1e-7)
+                plt.clf()
+                plt.plot(positions[0], f, color='blue')
+                plt.plot(x, np.zeros(shape=x.shape), 'rp', markersize=0.1)
+                plt.title(title)
+                plt.savefig(title+'.png', dpi=300)
 
 
     def propagateThread(self, id, idxs, threshold=0.1):
@@ -491,17 +475,11 @@ class FactorGraph():
             for i in range(len(self.factors)):
                 factor = copy.deepcopy(self.factors[rand_arr[i]])
                 key = factor.key
-                if key == 'f4':
-                    debug='on'
+
 
                 self.propagateMessage(key_factor=key, threshold=threshold)
 
-    def updateThread(self, id, idxs, threshold=0.1, nb_sample=100):
-        for idx in idxs:
-            key = copy.deepcopy(self.variables[idx].key)
-            self.updateVarPose(key, nb_sample, threshold=threshold)
-
-    def updateAll(self, nb_sample=100, threshold=0.1, multi=False):
+    def updateAll(self, nb_sample=100, threshold=0.1, multi=False, isKDE=False):
 
         if multi:
             list_idxs = []
@@ -532,7 +510,7 @@ class FactorGraph():
         else:
             for var in self.variables:
                 key = var.key
-                self.updateVarPose(key, nb_sample, threshold=threshold)
+                self.updateVarPose(key, nb_sample, isKDE)
 
     def printAllMessages(self, msg=False, pose=False):
         if msg:

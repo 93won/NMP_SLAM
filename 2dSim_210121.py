@@ -28,7 +28,7 @@ if __name__ == '__main__':
         print("#################################### CASE " + case + " ###################################")
 
         if case == 'non' or case == 'triangulation' or case == 'm-triangulation' or case == 'm-triangulation-2' or case == 'm-triangulation-3' or case == 'junction_tree':
-            graph = FactorGraph(3, 1024, nb_sample=64, sampling_mode='exact', nullTri=False, nullLoop=False, multi=False)
+            graph = FactorGraph(3, nb_sample=16, sampling_mode='gibbs', nullTri=False, nullLoop=False)
 
         errors = []
 
