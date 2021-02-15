@@ -26,7 +26,7 @@ if __name__ == '__main__':
         print("#################################### CASE " + case + " ###################################")
 
         if case == 'non' or case == 'triangulation' or case == 'm-triangulation' or case == 'm-triangulation-2' or case == 'm-triangulation-3' or case == 'junction_tree':
-            graph = FactorGraph(3, nb_sample=16, sampling_mode='gibbs', nullTri=False, nullLoop=False)
+            graph = FactorGraph(3, nb_sample=16, sampling_mode='mode', nullTri=False, nullLoop=False)
 
 
         graph.addVariable(0, 'x0', v2t([0, 0, 0]))
@@ -136,9 +136,8 @@ if __name__ == '__main__':
 
                 for i in range(100):
 
-                    """
                     ng, ws = graph.allGaussians()
-                    print(ng)
+                    #print(ng)
                     counts, bins = np.histogram(ws, bins=100)
                     plt.clf()
                     hist = plt.hist(bins[:-1], bins, weights=counts, color='black')
@@ -146,7 +145,6 @@ if __name__ == '__main__':
                     plt.ylabel('Counts')
                     plt.savefig('hists/{}.png'.format(i), dpi=300)
                     plt.clf()
-                    """
 
                     _time = time.time()
                     if case == 'junction_tree':

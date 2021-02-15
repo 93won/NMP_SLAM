@@ -280,6 +280,7 @@ class FactorGraph():
                     cov = (factor.noises[cnt])#+ msg.gaussians[max_idx].cov)
                     gaussian = Gaussian(copy.deepcopy(mean), copy.deepcopy(cov))
                     message_new.gaussians.append(copy.deepcopy(gaussian))
+                    message_new.weights.append(msg.weights[max_idx])
 
                 """
 
@@ -291,7 +292,6 @@ class FactorGraph():
                         message_new.gaussians.append(copy.deepcopy(gaussian))
                         message_new.weights.append(msg.weights[i])
                 cnt += 1
-
 
             self.edges[edge].message_factor_to_var = copy.deepcopy(message_new)
 
@@ -371,6 +371,7 @@ class FactorGraph():
                                       nullLoop=self.nullLoop, nullTri=self.nullTri)
 
         if not isKDE:
+
             idx_var = self.getVariableIdxFromKey(key_var)
             self.variables[idx_var].mean = gaussians[np.argmax(weights)].mean
 

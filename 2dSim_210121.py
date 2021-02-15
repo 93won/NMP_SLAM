@@ -28,7 +28,7 @@ if __name__ == '__main__':
         print("#################################### CASE " + case + " ###################################")
 
         if case == 'non' or case == 'triangulation' or case == 'm-triangulation' or case == 'm-triangulation-2' or case == 'm-triangulation-3' or case == 'junction_tree':
-            graph = FactorGraph(3, nb_sample=16, sampling_mode='gibbs', nullTri=False, nullLoop=False)
+            graph = FactorGraph(3, nb_sample=4, sampling_mode='gibbs', nullTri=False, nullLoop=False)
 
         errors = []
 
@@ -47,7 +47,7 @@ if __name__ == '__main__':
             #elif case == 'm-triangulation-3':
             #    max_tri_mode = 3
 
-            graph, CG, root = buildJunctionTree(graph, case, threshold, fake=True)
+            graph, CG, root = buildJunctionTree(graph, case, threshold, fake=False)
 
             T = nx.bfs_tree(CG, root)
 
@@ -154,7 +154,7 @@ if __name__ == '__main__':
                 poses_iter_1 = np.copy(np.array(graph.getAllPoses()))
 
                 ___time = time.time()
-                graph.updateAll(100, threshold=threshold)
+                graph.updateAll(100)
                 ____time = time.time()
                 plt.plot(np.array(gt)[:, 0], np.array(gt)[:, 1], '--', color='black', label='ground truth')
                 plt.plot(poses_iter_1[:, 0], poses_iter_1[:, 1], color='blue', markersize=5, label='slam pose')

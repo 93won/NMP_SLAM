@@ -300,7 +300,7 @@ def buildJunctionTree(graph, case='non', threshold=0.1, fake=True):
 
     return graph, CG, root
 
-def sampling(_messages, nb_sample=10, sampling_method="gibbs", nullLoop=False, nullTri=False, multi=False):
+def sampling(_messages, nb_sample=10, sampling_method="gibbs", nullLoop=False, nullTri=False, multi=False, gibbs_iter=10):
     nb_messages = len(_messages)
     messages = (_messages)
     dd = []
@@ -376,6 +376,40 @@ def sampling(_messages, nb_sample=10, sampling_method="gibbs", nullLoop=False, n
 
 
         elif sampling_method == 'gibbs':
+
+            """
+
+            for iter in range(gibbs_iter):
+
+                gaussians = []
+
+                for i in range(len(messages)):
+
+                    nb_gaussians_message = len(messages[i].gaussians)
+                    messages[i].weights /= np.sum(messages[i].weights)
+                    idx = np.random.choice(nb_gaussians_message, 1, p=messages[i].weights)[0]
+
+                    gaussians.append(messages[i].gaussians[idx])
+
+                    if idx == 0:
+                        gaussian_mul = gaussians[1]
+                        for c in range(2, len(gaussians)):
+                            gaussian_mul = gaussian_product_diag(gaussian_mul, gaussians[c])
+
+                    else:
+                        gaussian_mul = gaussians[0]
+                        for c in range(1, len(gaussians)):
+                            if c is not idx:
+                                gaussian_mul = gaussian_product_diag(gaussian_mul, gaussians[c])
+
+                    if gaussian_mul == None:
+                        continue
+
+                    gaussian_mul_full = gaussian_product_diag(gaussian_mul, gaussians[idx])
+                    denominator = norm_pdf_multivariate(t2v(gaussian_mul_full.mean), t2v(gaussian_mul_full.mean),
+                                                        gaussian_mul.cov)
+                    numerator = 1.0
+            """
 
             for c in range(nb_sample):
 
@@ -453,16 +487,15 @@ def sampling(_messages, nb_sample=10, sampling_method="gibbs", nullLoop=False, n
 
         for mode in modes:
             weights.append(mode.weight)
-            #coords.append(t2v(mode.mean))
-
+            coords.append(t2v(mode.mean))
         """
         plt.clf()
         coords = np.array(coords)
         plt.plot(coords[:, 0], coords[:, 1], 'x', color='red')
         plt.savefig('sample.png', dpi=300)
         plt.clf()
-        """
         #print(len(modes), " mode of ", len(results), "mixture of Gaussians")
+        """
         results = modes
 
 
