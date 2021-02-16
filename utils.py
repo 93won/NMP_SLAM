@@ -377,39 +377,57 @@ def sampling(_messages, nb_sample=10, sampling_method="gibbs", nullLoop=False, n
 
         elif sampling_method == 'gibbs':
 
-            """
+            for iter in range(1000):
 
-            for iter in range(gibbs_iter):
 
-                gaussians = []
+                # choose a starting label
+
+                idxs = []
+
+                for i in range(len(messages)):
+                    nb_gaussians_message = len(messages[i].gaussians)
+                    messages[i].weights /= np.sum(messages[i].weights)
+                    try:
+                        idx = np.random.choice(nb_gaussians_message, 1, p=messages[i].weights)[0]
+                    except:
+                        debug='on'
+                    idxs.append(idx)
 
                 for i in range(len(messages)):
 
-                    nb_gaussians_message = len(messages[i].gaussians)
-                    messages[i].weights /= np.sum(messages[i].weights)
-                    idx = np.random.choice(nb_gaussians_message, 1, p=messages[i].weights)[0]
+                    gaussian_target = messages[i].gaussians[idxs[i]]
 
-                    gaussians.append(messages[i].gaussians[idx])
-
-                    if idx == 0:
-                        gaussian_mul = gaussians[1]
-                        for c in range(2, len(gaussians)):
-                            gaussian_mul = gaussian_product_diag(gaussian_mul, gaussians[c])
+                    if i == 0:
+                        gaussian_mul = messages[1].gaussians[idxs[1]]
+                        for j in range(2, len(messages)):
+                            gaussian_mul = gaussian_product_diag(gaussian_mul, messages[j].gaussians[idxs[j]])
 
                     else:
-                        gaussian_mul = gaussians[0]
-                        for c in range(1, len(gaussians)):
-                            if c is not idx:
-                                gaussian_mul = gaussian_product_diag(gaussian_mul, gaussians[c])
+                        gaussian_mul = messages[0].gaussians[idxs[0]]
+                        for j in range(1, len(messages)):
+                            if j is not i:
+                                gaussian_mul = gaussian_product_diag(gaussian_mul, messages[j].gaussians[idxs[j]])
 
-                    if gaussian_mul == None:
-                        continue
+                    gaussian_mul_full = gaussian_product_diag(gaussian_mul, gaussian_target)
 
-                    gaussian_mul_full = gaussian_product_diag(gaussian_mul, gaussians[idx])
-                    denominator = norm_pdf_multivariate(t2v(gaussian_mul_full.mean), t2v(gaussian_mul_full.mean),
-                                                        gaussian_mul.cov)
-                    numerator = 1.0
-            """
+                    denominator = norm_pdf_multivariate(t2v(gaussian_target.mean),
+                                                        t2v(gaussian_mul_full.mean), gaussian_mul_full.cov)
+
+                    numerator = norm_pdf_multivariate(t2v(gaussian_target.mean),
+                                                      t2v(gaussian_target.mean), gaussian_target.cov)
+
+                    numerator *= norm_pdf_multivariate(t2v(gaussian_target.mean),
+                                                      t2v(gaussian_mul.mean), gaussian_mul.cov)
+
+                    numerator *= messages[i].weights[idxs[i]]
+
+                    numerator += 1e-14
+
+                    messages[i].weights[idxs[i]] = copy.deepcopy((numerator/(denominator + 1e-7)))
+
+
+
+                    messages[i].weights /= np.sum(messages[i].weights)
 
             for c in range(nb_sample):
 
@@ -417,11 +435,12 @@ def sampling(_messages, nb_sample=10, sampling_method="gibbs", nullLoop=False, n
 
                 for i in range(len(messages)):
                     nb_gaussians_message = len(messages[i].gaussians)
+                    messages[i].weights /= np.sum(messages[i].weights)
+
                     try:
-                        messages[i].weights /= np.sum(messages[i].weights)
                         idx = np.random.choice(nb_gaussians_message, 1, p=messages[i].weights)[0]
                     except:
-                        print(nb_gaussians_message)
+                        debug='on'
                     gaussians.append(messages[i].gaussians[idx])
 
                 gaussian_mul = gaussian_product_diag(gaussians[0], gaussians[1])

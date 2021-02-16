@@ -291,7 +291,6 @@ class FactorGraph():
                         gaussian = Gaussian(copy.deepcopy(mean), copy.deepcopy(cov), copy.deepcopy(msg.gaussians[i].weight))
                         message_new.gaussians.append(copy.deepcopy(gaussian))
                         message_new.weights.append(msg.weights[i])
-                cnt += 1
 
             self.edges[edge].message_factor_to_var = copy.deepcopy(message_new)
 
