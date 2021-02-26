@@ -300,7 +300,7 @@ def buildJunctionTree(graph, case='non', threshold=0.1, fake=True):
 
     return graph, CG, root
 
-def sampling(_messages, nb_sample=10, sampling_method="gibbs", nullLoop=False, nullTri=False, multi=False, gibbs_iter=10):
+def sampling(_messages, nb_sample=1, sampling_method="exact", nullLoop=False, nullTri=False, multi=False, gibbs_iter=10):
     nb_messages = len(_messages)
     messages = (_messages)
     dd = []
@@ -375,100 +375,8 @@ def sampling(_messages, nb_sample=10, sampling_method="gibbs", nullLoop=False, n
                     weights.append(weight)
 
 
-        elif sampling_method == 'gibbs':
-
-            for iter in range(1000):
-
-
-                # choose a starting label
-
-                idxs = []
-
-                for i in range(len(messages)):
-                    nb_gaussians_message = len(messages[i].gaussians)
-                    messages[i].weights /= np.sum(messages[i].weights)
-                    try:
-                        idx = np.random.choice(nb_gaussians_message, 1, p=messages[i].weights)[0]
-                    except:
-                        debug='on'
-                    idxs.append(idx)
-
-                for i in range(len(messages)):
-
-                    gaussian_target = messages[i].gaussians[idxs[i]]
-
-                    if i == 0:
-                        gaussian_mul = messages[1].gaussians[idxs[1]]
-                        for j in range(2, len(messages)):
-                            gaussian_mul = gaussian_product_diag(gaussian_mul, messages[j].gaussians[idxs[j]])
-
-                    else:
-                        gaussian_mul = messages[0].gaussians[idxs[0]]
-                        for j in range(1, len(messages)):
-                            if j is not i:
-                                gaussian_mul = gaussian_product_diag(gaussian_mul, messages[j].gaussians[idxs[j]])
-
-                    gaussian_mul_full = gaussian_product_diag(gaussian_mul, gaussian_target)
-
-                    denominator = norm_pdf_multivariate(t2v(gaussian_target.mean),
-                                                        t2v(gaussian_mul_full.mean), gaussian_mul_full.cov)
-
-                    numerator = norm_pdf_multivariate(t2v(gaussian_target.mean),
-                                                      t2v(gaussian_target.mean), gaussian_target.cov)
-
-                    numerator *= norm_pdf_multivariate(t2v(gaussian_target.mean),
-                                                      t2v(gaussian_mul.mean), gaussian_mul.cov)
-
-                    numerator *= messages[i].weights[idxs[i]]
-
-                    numerator += 1e-14
-
-                    messages[i].weights[idxs[i]] = copy.deepcopy((numerator/(denominator + 1e-7)))
-
-
-
-                    messages[i].weights /= np.sum(messages[i].weights)
-
-            for c in range(nb_sample):
-
-                gaussians = []
-
-                for i in range(len(messages)):
-                    nb_gaussians_message = len(messages[i].gaussians)
-                    messages[i].weights /= np.sum(messages[i].weights)
-
-                    try:
-                        idx = np.random.choice(nb_gaussians_message, 1, p=messages[i].weights)[0]
-                    except:
-                        debug='on'
-                    gaussians.append(messages[i].gaussians[idx])
-
-                gaussian_mul = gaussian_product_diag(gaussians[0], gaussians[1])
-                for i in range(2, len(gaussians)):
-                    gaussian_mul = gaussian_product_diag(gaussian_mul, gaussians[i])
-
-                if gaussian_mul == None:
-                    continue
-
-                denominator = norm_pdf_multivariate(t2v(gaussian_mul.mean), t2v(gaussian_mul.mean),
-                                                    gaussian_mul.cov)
-                numerator = 1.0
-
-                for i in range(len(gaussians)):
-                    if gaussians[i] is not None:
-                        numerator *= norm_pdf_multivariate(t2v(gaussian_mul.mean), t2v(gaussians[i].mean), gaussians[i].cov) + 1e-7
-
-
-                weight = numerator / (denominator + 1e-7)
-                gaussian_mul.weight = weight
-                results.append(gaussian_mul)
-                weights.append(weight)
-
-
-
+        
         weights /= np.sum(weights)
-
-
 
         weights = weights.tolist()
 
