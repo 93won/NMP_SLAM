@@ -32,18 +32,10 @@ if __name__ == '__main__':
             graph = None
             print("#################################### CASE " + case + " ###################################")
 
-            if case == 'non' or case == 'triangulation' or case == 'm-triangulation' or case == 'm-triangulation-2' or case == 'm-triangulation-3' or case == 'junction_tree':
+            if case == 'junction_tree':
                 sampling_mode_split = sampling_mode.split('_')
 
-                if len(sampling_mode_split) == 2:
-                    mode = sampling_mode_split[0]
-                    nb_sample = np.int32(sampling_mode_split[1])
-
-                else:
-                    mode = 'mode'
-                    nb_sample = 1
-
-                graph = FactorGraph(1, nb_sample=nb_sample, sampling_mode=mode, nullTri=False, nullLoop=False)
+                graph = FactorGraph(2, sampling_mode='mode', nullTri=False, nullLoop=False)
 
             errors = []
 
@@ -197,65 +189,6 @@ if __name__ == '__main__':
 
                     times.append((__time - _time))
 
-            errors_all.append(errors)
-            times_all.append(np.mean(times))
-            nb_gaussian_all.append(gaussian_nb)
-    """
-    colors = ['black', 'green', 'blue', 'red']
-
-    plt.clf()
-    plt.xticks([1, 5, 10, 15, 20])
-    plt.ylabel('Mean square error')
-    plt.xlabel('Iteration')
-    for i in range(len(sampling_modes)):
-
-        sampling_mode_split = sampling_modes[i].split('_')
-        if len(sampling_mode_split) == 2:
-            label = 'Gibbs ' + sampling_mode_split[1]
-            plt.plot(errors_all[i], color=colors[i], label=label)
-            plt.scatter(np.arange(len(errors_all[i])), errors_all[i], s=30, facecolors='none', edgecolors=colors[i])
-        else:
-            plt.plot(errors_all[i], color=colors[i], label='Ours')
-            plt.scatter(np.arange(len(errors_all[i])), errors_all[i], s=30, facecolors='none', edgecolors=colors[i])
-
-    plt.legend(loc='upper right')
-    plt.ylim(0, 2.5)
-    plt.savefig('Error_2d.png', dpi=300)
-
-    plt.clf()
-
-    for i in range(len(sampling_modes)):
-
-        sampling_mode_split = sampling_modes[i].split('_')
-        if len(sampling_mode_split) == 2:
-            label = 'Gibbs ' + sampling_mode_split[1]
-            plt.plot(nb_gaussian_all[i], color=colors[i], label=label)
-            plt.scatter(np.arange(len(nb_gaussian_all[i])), nb_gaussian_all[i], s=30, facecolors='none', edgecolors=colors[i])
-        else:
-            plt.plot(nb_gaussian_all[i], color=colors[i], label='Ours')
-            plt.scatter(np.arange(len(nb_gaussian_all[i])), nb_gaussian_all[i], s=30, facecolors='none', edgecolors=colors[i])
-
-    plt.legend(loc='upper right')
-    plt.savefig('NB_G.png', dpi=300)
-
-    plt.clf()
-
-
-    label = ['Ours', 'Gibbs 16', 'Gibbs 32', 'Gibbs 64']
-    index = np.arange(len(label))
-
-    plt.ylabel('Mean iteration time [s]')
-
-    times_all = np.array(times_all)
-    time_aux = copy.deepcopy(times_all[3])
-    times_all[1:4] = times_all[0:3]*0.3
-    times_all[0] = copy.deepcopy(time_aux)
-    index = np.arange(len(label))
-    label = ['Ours', 'Gibbs 16', 'Gibbs 32', 'Gibbs 64']
-    index = np.arange(len(label))
-    plt.bar(index, times_all, color=['red', 'black', 'green', 'blue'])
-    plt.xticks(index, label)
-
-    # plt.legend(loc='upper right')
-    plt.savefig('Times_2d.png', dpi=300)
-    """
+            #errors_all.append(errors)
+            #times_all.append(np.mean(times))
+            #nb_gaussian_all.append(gaussian_nb)
