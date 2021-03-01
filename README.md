@@ -3,3 +3,5 @@
 Implementation of multi-modal belief propagation using clusrering-based re-parameterization for SLAM back-end
 
 Through this SLAM back-end algorithm, robust and efficient optimization results can be obtained for multi-modal factor graphs including false loop closures in environments where structural ambiguities exist.
+
+[figure_github.pdf](https://github.com/93won/NMP_SLAM/files/6059558/figure_github.pdf)
