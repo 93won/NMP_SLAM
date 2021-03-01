@@ -8,7 +8,7 @@ Through this SLAM back-end algorithm, robust and efficient optimization results 
 
 ### 1-D Example
 
-The 1-D example implemented in 1d_Simulation.py is an example of constructing and optimizing a multi-modal factor fraph for data association problem as follows:
+1-D example implemented in 1d_Simulation.py is an example of constructing and optimizing a multi-modal factor fraph for data association problem as follows:
 
 ![1](https://user-images.githubusercontent.com/38591115/109464852-ae2ac680-7aaa-11eb-8fa2-3d2e956fbe4e.PNG)
 
@@ -22,6 +22,13 @@ The 1-D example implemented in 1d_Simulation.py is an example of constructing an
 
 This example is deeply inspired by 1-D example of Reference [2]
 
+### 2-D Example
+
+2-D example implemented in 2d_Simulation.py is an example of 2D simulation
+
+![2d_example](https://user-images.githubusercontent.com/38591115/109468148-8d18a480-7aaf-11eb-97f7-0f380d6f1a9a.png)
+
+Simulation environment is a 2-D map where structural ambiguities exist. From there, the robot forms a factor graph for SLAM using laser scan data obtained from a limited range of LiDAR sensors. When multiple registration solutions exist, as in figure, multi-modal factors are modeled using a weighted Gaussian mixture. We apply the proposed SLAM algorithm to this simulation.
 
 
 ## Reference
