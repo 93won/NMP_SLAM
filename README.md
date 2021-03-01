@@ -33,8 +33,8 @@ In simulation often exists Euclidean distance error between the (a)actual positi
 
 # TO DO
 
-(1) C++ implementation for speed up
-(2) Implementation of fast triangulation algorithm (LEX_M -> ???)
+#### (1) C++ implementation for speed up
+#### (2) Implementation of fast triangulation algorithm (LEX_M -> ???)
 
 ## Reference
 
