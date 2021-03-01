@@ -31,6 +31,11 @@ This example is deeply inspired by 1-D example of Reference [2]
 In simulation often exists Euclidean distance error between the (a)actual position and (b)the estimated position after a long operation of the robot. If the sensor data set which is obtained in the state of (b) is similar with those obtained in the previous positions (c) and (d), and the distance between the two states of (c) and (d) is in the range of accumulated error, it is often a source of errors in previous SLAM. The proposed algorithm can handle data where such error from structural ambiguities by modeling both in a loop closure factor using a weighted Gaussian mixture.
 
 
+# TO DO
+
+(1) C++ implementation for speed up
+(2) Implementation of fast triangulation algorithm (LEX_M -> ???)
+
 ## Reference
 
 [1] Seungwon Choi and Taewan Kim. (In Review) Efficient and Robust Multi-Modal Belief Propagation SLAM Using Clusrering-Based Re-Parameterization
