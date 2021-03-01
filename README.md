@@ -28,7 +28,7 @@ This example is deeply inspired by 1-D example of Reference [2]
 
 ![2d_example](https://user-images.githubusercontent.com/38591115/109468148-8d18a480-7aaf-11eb-97f7-0f380d6f1a9a.png)
 
-Simulation environment is a 2-D map where structural ambiguities exist. From there, the robot forms a factor graph for SLAM using laser scan data obtained from a limited range of LiDAR sensors. When multiple registration solutions exist, as in figure, multi-modal factors are modeled using a weighted Gaussian mixture. We apply the proposed SLAM algorithm to this simulation.
+In simulation often exists Euclidean distance error between the (a)actual position and (b)the estimated position after a long operation of the robot. If the sensor data set which is obtained in the state of (b) is similar with those obtained in the previous positions (c) and (d), and the distance between the two states of (c) and (d) is in the range of accumulated error, it is often a source of errors in previous SLAM. The proposed algorithm can handle data where such error from structural ambiguities by modeling both in a loop closure factor using a weighted Gaussian mixture.
 
 
 ## Reference
