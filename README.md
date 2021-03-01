@@ -20,7 +20,7 @@ Through this SLAM back-end algorithm, robust and efficient optimization results 
 
 ![5](https://user-images.githubusercontent.com/38591115/109464894-c13d9680-7aaa-11eb-884f-6eaf9e4b6e98.PNG)
 
-This example is deeply inspired by 1-D example of Reference [2]
+This example is deeply inspired by 1-D example of eference [2]
 
 ### 2-D Example
 
